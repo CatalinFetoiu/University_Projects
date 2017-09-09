@@ -3,6 +3,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Stack;
 
+/**
+ * Clasa este folosita pentru parsarea programului si construirea arborelui
+ * sau de sintaxa. Pentru aceasta sunt folosite doua stive, una ce contine
+ * parantezele, operatorii si instructiunile din program si o a doua ce contine
+ * nodurile din arbore. Cele doua stive sunt updatate conform algoritmului descris de
+ * metoda createAstFromExpression. Sunt prezente metode pentru adaugarea diferitelor
+ * tipuri de noduri in arbore. La finalul parcurgerii expresiei, stiva cu noduri va
+ * contine un singur nod, si anume nodul radacina al arborelui. Parserul poate
+ * fi construit in functie de operatorii si instructiunile unui program.
+ * @author Fetoiu Catalin-Emil
+ *
+ */
 public class Parser {
 
 	private final HashMap<String, Integer> operators;
@@ -18,6 +30,11 @@ public class Parser {
 		this.instructions = instructions;
 	}
 	
+	/**
+	 * Adauga un nod de tip Operator in arbore. Sunt scoase de pe stiva
+	 * cele doua noduri copil ale sale, este creat noul nod, acesta fiind
+	 * apoi adaugat inapoi pe stiva.
+	 */
 	private void addOperatorNodeToTree(String operation) {
 		AstNode rightChild = treeNodesStack.pop();
 		AstNode leftChild = treeNodesStack.pop();
@@ -25,6 +42,11 @@ public class Parser {
 				.createOperatorNode(operation, leftChild, rightChild));
 	}
 	
+	/**
+	 * Adauga un nod de tip Instruction (Assert sau Return) in arbore.
+	 * Este scos de pe stiva de noduri nodul sau copil, fiind creat noul
+	 * nod si apoi adaugat inapoi pe stiva.
+	 */
 	private void addInstructionNodeToTree(String instruction) {
 		AstNode child = treeNodesStack.pop();
 		
@@ -32,6 +54,11 @@ public class Parser {
 				.createInstructionNode(instruction, child));
 	}
 	
+	/**
+	 * Adauga un nod de tip For in arbore. Sunt scoase de pe stiva nodurile
+	 * corespunzatoare initializarii, incrementarii, conditiei de iesire si
+	 * a corpului for-ului, fiind adaugat inapoi pe stiva nodul For creat.
+	 */
 	private void addForNodeToTree() {
 		AstNode forBody = treeNodesStack.pop();
 		AstNode increment = treeNodesStack.pop();
@@ -42,6 +69,11 @@ public class Parser {
 				createForNode(init, condition, increment, forBody));
 	}
 	
+	/**
+	 * Adauga un nod de tip If in arbore. Sunt scoase de pe stiva nodurile
+	 * corespunzatoare conditiei si celor doua ramuri, fiind adauagat inapoi
+	 * pe stiva nodul If creat.
+	 */
 	private void addIfNodeToTree() {
 		AstNode falseBody =  treeNodesStack.pop();
 		AstNode trueBody =  treeNodesStack.pop();
@@ -51,27 +83,35 @@ public class Parser {
 				createIfNode(condition, trueBody, falseBody));
 	}
 	
+	/**
+	 * Creeaza arborele de sintaxa al unui program dat ca parametru prin
+	 * String-ul expression, ce contine reprezentarea programului pe o singura linie.
+	 */
 	public ProgramIR createAstFromExpression(String expression) {
 		
-		boolean hasReturn = false;
-		boolean hasScopeErrors = false;
-		
-		HashMap<String, Integer> variables = new HashMap<String, Integer>();
 		treeNodesStack = new Stack<AstNode>();
 		operatorStack = new Stack<String>();
 		
+		/** Sunt extrasi tokenii din program */
 		ArrayList<String> tokens = ParserUtils.extractTokens(expression);
 		
+		/** Sunt parcursi tokenii programului */
 		for(int index = 0; index < tokens.size(); index++) {	
 			
 			String currentToken = tokens.get(index);
 			switch(currentToken) {
 			
+			/** Daca se intalneste o paranteza deschisa, aceasta este adaugata
+			 * pe stiva de operatori */
 			case "[":
 			{
 				operatorStack.push("[");
 				break;
 			}
+			/** Daca se intalnste o paranteza inchisa, inseamna ca aceasta marcheaza 
+			 * sfarsitul unui sub-program, prin urmare instructiunea corespunzatoare 
+			 * acestui subprogram este eliminata de pe stiva de operatori si este
+			 * adaugat nodul de tipul sau in arbore */
 			case "]":
 			{
 				String programElement = operatorStack.pop();
@@ -84,87 +124,50 @@ public class Parser {
 				else if(programElement.equals("for")) {
 					addForNodeToTree();
 				}
-				//programElement is if
 				else {
 					addIfNodeToTree();
 				}
 				
+				/** Este eliminata de pe stiva paranteza deschisa pereche a celei intalnite */
 				operatorStack.pop();
 				break;
 			}
+			/** Daca se intalneste o variabila, un operator sau o constanta. Pentru
+			 * variabile si constante, este adaugat nodul corespunzator in arbore, iar
+			 * pentru operatori, acestia sunt adaugati pe stiva de operatori */
 			default:
 			{
+				/** Daca token-ul curent este operator binar */
 				if(operators.get(currentToken) != null) {
 					operatorStack.push(currentToken);
 				}
+				/** Daca token-ul curent este assert sau return */
 				else if(instructions.get(currentToken) != null) {
 					operatorStack.push(currentToken);
-					if(currentToken.equals("return")) {
-						hasReturn = true;
-					}
 				}
+				/** Daca token-ul curent este for */
 				else if(currentToken.equals("for")) {
 					operatorStack.push(currentToken);
 				}
+				/** Daca token-ul curent este if */
 				else if(currentToken.equals("if")) {
 					operatorStack.push(currentToken);
 				}
+				/** Daca token-ul curent este o constanta */
 				else if(currentToken.matches("[0-9]+")) {
 					treeNodesStack.push(NodeFactory.getInstance().
 							createConstantNode(Integer.parseInt(currentToken)));
 				}
-				//token is variable
+				/** Daca token-ul curent este o variabila */
 				else {
 					treeNodesStack.push(NodeFactory.getInstance().
 							createVariableNode(currentToken));
-					if(variables.get(currentToken) == null) {
-						if(tokens.get(index - 1).equals("=")) {
-							boolean ok = true;
-							int j = index + 2;
-							int count = 1;
-							if(tokens.get(index + 1).equals("[")) {
-								while(count != 0) {
-									if(tokens.get(j).equals("[")) {
-										count++;
-									}
-									else if(tokens.get(j).equals("]")) {
-										count--;
-									}
-									else {
-										if(tokens.get(j).equals(currentToken)) {
-											ok = false;
-											break;
-										}
-									}
-									j++;
-								}
-							}
-							else {
-								if(tokens.get(index + 1).equals(currentToken)) {
-									ok = false;
-								}
-							}
-							if(ok) {
-								variables.put(currentToken, 0);
-							}
-							else {
-								hasScopeErrors = true;
-							}
-
-						}
-						else {
-							hasScopeErrors = true;
-						}
-					}
 				}
 			}
 			}
-			if(hasScopeErrors) {
-				break;
-			}
 		}
-			
-		return new ProgramIR(treeNodesStack.pop(), hasReturn, hasScopeErrors);	
+		
+		/** Este returnat un ProgramIR ce contine radacina arborelui de sintaxa */
+		return new ProgramIR(treeNodesStack.pop());	
 	}
-	
 }

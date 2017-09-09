@@ -1,4 +1,10 @@
 
+/**
+ * Clasa generica ce este mostenita de toate nodurile de tip operatori binari.
+ * Contine doua noduri copii, corespunzatoare celor doi operanzi.
+ * @author Fetoiu Catalin-Emil
+ *
+ */
 public abstract class OperatorNode extends AstNode {
 	
 	private final AstNode leftChild;

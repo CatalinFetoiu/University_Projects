@@ -1,6 +1,18 @@
 
 import java.util.HashMap;
 
+/**
+ * Clasa este folosita pentru construirea tuturor tipurilor de noduri din
+ * arborele de sintaxa. Nodurile de tip Operator sunt create folosind metoda
+ * createOperatorNode, cele de tip Assert sau Return folosind createInstructionNode,
+ * pentru celelalte existand metode specifice. Separarea construirii nodurilor in
+ * aceste metode este motivata de tipul acestora. Astfel, nodurile binare sunt
+ * construite de aceeasi metoda, la fel si cele unare (Assert si Return). Nodurile
+ * de tip For si If sunt construite separat deoarece ele au un numar diferit de noduri
+ * copii si nu poti fi incadrate astfel in aceleasi categorii.
+ * @author Fetoiu Catalin-Emil
+ *
+ */
 public class NodeFactory {
 
 	private static final NodeFactory instance = new NodeFactory();

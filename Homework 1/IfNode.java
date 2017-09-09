@@ -1,4 +1,11 @@
 
+/**
+ * Clasa folosita pentru construirea nodurilor corespunzatoare instructiunilor de tip
+ * if din programul interpretat. Contine noduri pentru conditia din if si pentru
+ * ramurile true si false.
+ * @author Fetoiu Catalin-Emil
+ *
+ */
 public class IfNode extends AstNode {
 
 	private final AstNode condition;
@@ -23,7 +30,7 @@ public class IfNode extends AstNode {
 		return falseBody;
 	}
 	
-	public Boolean accept(Visitor v) throws AssertException {
+	public Boolean accept(Visitor v) throws Exception {
 		return v.visit(this);
 	}
 }

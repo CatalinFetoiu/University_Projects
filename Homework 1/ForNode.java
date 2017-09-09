@@ -1,4 +1,11 @@
 
+/**
+ * Clasa este folosita pentru construirea nodurilor corespunzatoare instructiunilor
+ * for din programul interpretat. Contine noduri corespunzatoare initializarii,
+ * incrementarii, conditiei de iesire si a corpului for-ului.
+ * @author Fetoiu Catalin-Emil
+ *
+ */
 public class ForNode extends AstNode {
 
 	private final AstNode init;
@@ -31,7 +38,7 @@ public class ForNode extends AstNode {
 		return forBody;
 	}
 	
-	public Boolean accept(Visitor v) throws AssertException {
+	public Boolean accept(Visitor v) throws Exception {
 		return v.visit(this);
 	}
 }
